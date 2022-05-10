@@ -1,0 +1,13 @@
+[package]
+name = "obsidianmd"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+regex = "1.5.5"
+snafu = "0.7.1"
+time = "0.3.9"
+walkdir = "2.3.2"
+xi-rope = "0.3.0"
