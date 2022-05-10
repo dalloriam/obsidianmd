@@ -57,4 +57,14 @@ impl Vault {
     pub fn note<P: AsRef<Path>>(&self, path: P) -> Result<Note> {
         Note::open(self.path.join(path.as_ref())).context(OpenNoteSnafu)
     }
+
+    pub fn daily(&self, date: time::Date) -> Result<Option<Note>> {
+        match &self.config.daily {
+            Some(dailies) => self.note(dailies.join(format!("{date}.md"))).map(Some),
+            None => match self.lookup(&date.to_string())? {
+                Some(p) => self.note(p).map(Some),
+                None => Ok(None),
+            },
+        }
+    }
 }

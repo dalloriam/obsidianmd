@@ -12,19 +12,7 @@ Really nested text
 
 ## Subsection B
 
-Other text for subsection B
-
-- [ ] option a
-- [ ] option b
-- [ ] option c
-
-- [ ] option a
-- [ ] option b
-- [ ] option c
-
-- [ ] option a
-- [ ] option b
-- [ ] option c
+Test
 
 ## SubSection C
 

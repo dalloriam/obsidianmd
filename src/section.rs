@@ -107,6 +107,38 @@ impl<'a> Section<'a> {
         self.interval.end = new_end;
     }
 
+    pub fn replace<T: md::ToMarkdown>(&mut self, data: T) {
+        let mut rope = self.rope.borrow_mut();
+
+        let diff = Rope::from(data.to_markdown());
+        let new_end = self.interval.start + diff.len();
+
+        rope.edit(self.interval, diff);
+        self.interval.end = new_end;
+    }
+
+    /// Trims trailing whitespace at the end of the section.
+    pub fn trim_end(&mut self) {
+        let mut rope = self.rope.borrow_mut();
+
+        // Get the range of whitespace to remove.
+        let interval = {
+            let mut cursor = Cursor::new(&rope, self.interval.end);
+            while let Some(codepoint) = cursor.prev_codepoint() {
+                if !codepoint.is_whitespace() {
+                    break;
+                }
+            }
+
+            cursor.next_codepoint();
+
+            cursor.pos()..self.interval.end
+        };
+
+        self.interval.end = interval.start;
+        rope.edit(interval, "");
+    }
+
     // TODO: Add way to list checkboxes, recuperate and toggle their state.
     // TODO: Add way to extract all links.
     // TODO: Add way to extract code blocks.
