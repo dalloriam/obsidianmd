@@ -8,6 +8,7 @@ use snafu::{ResultExt, Snafu};
 use xi_rope::tree::Node;
 use xi_rope::{Rope, RopeInfo};
 
+use crate::markdown::ToMarkdown;
 use crate::section::Section;
 
 #[derive(Debug, Snafu)]
@@ -17,6 +18,9 @@ pub enum NoteError {
 
     #[snafu(display("failed to save note: {:?}", path))]
     Save { source: io::Error, path: PathBuf },
+
+    #[snafu(display("section '{}' not found", section))]
+    SectionNotFound { section: String },
 }
 
 type Result<T> = std::result::Result<T, NoteError>;
@@ -49,13 +53,45 @@ impl Note {
         })
     }
 
-    pub fn section<'a>(&'a self, name: &str) -> Option<Section<'a>> {
+    fn section<'a>(&'a self, name: Option<&str>) -> Option<Section<'a>> {
         let root_section: Section<'a> = Section::new(0, .., &self.rope);
-        root_section.subsection(name)
+        match name {
+            Some(s) => root_section.subsection(s),
+            None => Some(root_section),
+        }
     }
 
-    pub fn body(&self) -> String {
-        self.rope.borrow().to_string()
+    pub fn body(&self, section: Option<&str>) -> Result<String> {
+        let section = self
+            .section(section)
+            .ok_or_else(|| NoteError::SectionNotFound {
+                section: String::from(section.unwrap()),
+            })?;
+        Ok(section.body())
+    }
+
+    pub fn append<T: ToMarkdown>(&self, data: T, section: Option<&str>) -> Result<()> {
+        let mut section = self
+            .section(section)
+            .ok_or_else(|| NoteError::SectionNotFound {
+                section: String::from(section.unwrap()),
+            })?;
+
+        section.append(data);
+
+        Ok(())
+    }
+
+    pub fn trim_end(&self, section: Option<&str>) -> Result<()> {
+        let mut section = self
+            .section(section)
+            .ok_or_else(|| NoteError::SectionNotFound {
+                section: String::from(section.unwrap()),
+            })?;
+
+        section.trim_end();
+
+        Ok(())
     }
 }
 

@@ -132,7 +132,12 @@ impl<'a> Section<'a> {
 
             cursor.next_codepoint();
 
-            cursor.pos()..self.interval.end
+            // The last \n of a section is important so we skip it.
+            let end = rope
+                .at_or_prev_codepoint_boundary(self.interval.end - 1)
+                .unwrap();
+
+            cursor.pos()..end
         };
 
         self.interval.end = interval.start;
