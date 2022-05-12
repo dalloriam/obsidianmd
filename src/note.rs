@@ -45,6 +45,10 @@ impl Note {
         })
     }
 
+    /// Saves pending changes to disk.
+    ///
+    /// Note: As of the time of writing, `save()` does not check whether the underlying
+    ///       file was changed by an external program, making accidental overwrites possible.
     pub fn save(&self) -> Result<()> {
         // FIXME(0.1): We should validate that the contents of the note didn't change since it was opened.
         //             If it did, abort saving. (maybe add a `force` parameter to force saving?).
@@ -61,6 +65,12 @@ impl Note {
         }
     }
 
+    /// Get the body of a note.
+    ///
+    /// Passing the `section` parameter will only fetch the body of that section.
+    ///
+    /// # Errors
+    /// Returns an error if a section name is specified and that section is not found.
     pub fn body(&self, section: Option<&str>) -> Result<String> {
         let section = self
             .section(section)
@@ -70,6 +80,12 @@ impl Note {
         Ok(section.body())
     }
 
+    /// Append data to the end of a note.
+    ///
+    /// Passing the `section` parameter will append to the end of the section.
+    ///
+    /// # Errors
+    /// Returns an error if a section name is specified and that section is not found.
     pub fn append<T: ToMarkdown>(&self, data: T, section: Option<&str>) -> Result<()> {
         let mut section = self
             .section(section)
@@ -82,6 +98,12 @@ impl Note {
         Ok(())
     }
 
+    /// Trims whitespace at the end of a note.
+    ///
+    /// Passing the `section` parameter will trim whitespace from the end of the section.
+    ///
+    /// # Errors
+    /// Returns an error if a section name is specified and that section is not found.
     pub fn trim_end(&self, section: Option<&str>) -> Result<()> {
         let mut section = self
             .section(section)

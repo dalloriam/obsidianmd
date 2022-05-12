@@ -9,7 +9,7 @@ use xi_rope::{Cursor, Interval, RopeInfo};
 
 use crate::markdown as md;
 
-pub struct Section<'a> {
+pub(crate) struct Section<'a> {
     weight: usize,
     interval: Interval,
     rope: &'a RefCell<Node<RopeInfo>>,
@@ -107,16 +107,6 @@ impl<'a> Section<'a> {
         self.interval.end = new_end;
     }
 
-    pub fn replace<T: md::ToMarkdown>(&mut self, data: T) {
-        let mut rope = self.rope.borrow_mut();
-
-        let diff = Rope::from(data.to_markdown());
-        let new_end = self.interval.start + diff.len();
-
-        rope.edit(self.interval, diff);
-        self.interval.end = new_end;
-    }
-
     /// Trims trailing whitespace at the end of the section.
     pub fn trim_end(&mut self) {
         let mut rope = self.rope.borrow_mut();
@@ -147,4 +137,55 @@ impl<'a> Section<'a> {
     // TODO: Add way to list checkboxes, recuperate and toggle their state.
     // TODO: Add way to extract all links.
     // TODO: Add way to extract code blocks.
+}
+
+#[cfg(test)]
+mod tests {
+    use std::cell::RefCell;
+
+    use xi_rope::{tree::Node, Rope, RopeInfo};
+
+    use super::Section;
+
+    const TEST_NOTE: &str = include_str!("data/test.md");
+
+    fn get_rope() -> RefCell<Node<RopeInfo>> {
+        RefCell::new(Rope::from(TEST_NOTE))
+    }
+
+    #[test]
+    fn root_section_body() {
+        let rope = get_rope();
+        let s = Section::new(0, .., &rope);
+        assert_eq!(s.body(), TEST_NOTE);
+    }
+
+    #[test]
+    fn subsection_body() {
+        let rope = get_rope();
+        let s = Section::new(0, .., &rope);
+        let section = s.subsection("subsection c").unwrap();
+
+        assert_eq!(section.body(), "\nText For Section C\n\n");
+    }
+
+    #[test]
+    fn subsection_trim_space() {
+        let rope = get_rope();
+        let s = Section::new(0, .., &rope);
+        let mut sub = s.subsection("subsection c").unwrap();
+        sub.trim_end();
+
+        assert_eq!(sub.body(), "\nText For Section C");
+    }
+
+    #[test]
+    fn subsection_append() {
+        let rope = get_rope();
+        let s = Section::new(0, .., &rope);
+        let mut sub = s.subsection("subsection c").unwrap();
+        sub.append("bing bong");
+
+        assert_eq!(sub.body(), "\nText For Section C\n\nbing bong");
+    }
 }
